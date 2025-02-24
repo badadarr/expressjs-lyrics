@@ -1,10 +1,9 @@
 import express from "express";
 import { chromium } from "playwright";
-import LanguageDetect from "languagedetect";
+import { detect, detectAll } from "tinyld";
 
 const app = express();
 const port = 3000;
-const langDetector = new LanguageDetect();
 
 // Endpoint untuk scraping lirik per pasangan title & artist
 app.get("/lyrics", async (req, res) => {
@@ -24,7 +23,7 @@ app.get("/lyrics", async (req, res) => {
 
   let browser;
   try {
-    // Jalankan browser dengan tampilan GUI (headless: false)
+    // Jalankan browser dengan mode headless
     browser = await chromium.launch({
       headless: true,
       timeout: 60000,
@@ -262,19 +261,55 @@ app.get("/lyrics", async (req, res) => {
       throw new Error("Tidak dapat mengekstrak lirik dengan benar");
     }
 
-    // Deteksi bahasa menggunakan LanguageDetect
-    let detectedLanguages = langDetector.detect(lyrics, 1);
-    let language = {
-      name: "Tidak terdeteksi",
-      probability: 0,
+    // Deteksi bahasa menggunakan tinyld.detectAll
+    const detectedLanguages = detectAll(lyrics);
+
+    if (detectedLanguages.length === 0) {
+      throw new Error("Tidak dapat mendeteksi bahasa.");
+    }
+
+    // Ambil bahasa dengan akurasi tertinggi
+    const mostProbableLang = detectedLanguages[0];
+
+    // Mendapatkan nama bahasa lengkap dari kode
+    const langNames = {
+      en: "English",
+      es: "Spanish",
+      fr: "French",
+      de: "German",
+      it: "Italian",
+      pt: "Portuguese",
+      nl: "Dutch",
+      pl: "Polish",
+      id: "Indonesian",
+      ja: "Japanese",
+      ko: "Korean",
+      zh: "Chinese",
+      ru: "Russian",
+      ar: "Arabic",
+      hi: "Hindi",
+      tr: "Turkish",
+      sv: "Swedish",
+      da: "Danish",
+      fi: "Finnish",
+      no: "Norwegian",
+      hu: "Hungarian",
+      th: "Thai",
+      vi: "Vietnamese",
+      cs: "Czech",
+      el: "Greek",
+      he: "Hebrew",
+      ro: "Romanian",
+      sk: "Slovak",
+      // Tambahkan bahasa lain sesuai kebutuhan
     };
 
-    if (detectedLanguages && detectedLanguages.length > 0) {
-      language = {
-        name: detectedLanguages[0][0],
-        probability: detectedLanguages[0][1],
-      };
-    }
+    // Menyiapkan object bahasa
+    const language = {
+      code: mostProbableLang.lang, // Kode bahasa (misalnya, 'en', 'ja')
+      name: langNames[mostProbableLang.lang] || mostProbableLang.lang, // Nama bahasa lengkap
+      probability: mostProbableLang.accuracy, // Akurasi (confidence level)
+    };
 
     res.json({ title, artist, lyrics, language });
   } catch (error) {
