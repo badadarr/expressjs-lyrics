@@ -1,8 +1,10 @@
 import express from "express";
 import { chromium } from "playwright";
+import LanguageDetect from "languagedetect";
 
 const app = express();
 const port = 3000;
+const langDetector = new LanguageDetect();
 
 // Endpoint untuk scraping lirik per pasangan title & artist
 app.get("/lyrics", async (req, res) => {
@@ -131,6 +133,24 @@ app.get("/lyrics", async (req, res) => {
           }
         });
 
+        // remove the span element
+        const spanElements = document.querySelectorAll("span");
+        spanElements.forEach((element) => {
+          if (element && cleanedText.includes(element.innerText)) {
+            // Escape special characters in the title text to avoid regex issues
+            const escapedText = element.innerText.replace(
+              /[.*+?^${}()|[\]\\]/g,
+              "\\$&"
+            );
+            // Create a regex that can match the text precisely
+            const titleRegex = new RegExp(escapedText, "g");
+            cleanedText = cleanedText.replace(titleRegex, "");
+          }
+        });
+
+        // Hapus semua teks yang mengandung pola (feat. ...)
+        cleanedText = cleanedText.replace(/\(feat\..*?\)/g, "");
+
         // Hapus konten setelah "Submit Corrections" jika ada
         const submitIndex = cleanedText.indexOf("Submit Corrections");
         if (submitIndex !== -1) {
@@ -193,6 +213,24 @@ app.get("/lyrics", async (req, res) => {
               }
             });
 
+            // remove the span element
+            const spanElements = document.querySelectorAll("span");
+            spanElements.forEach((element) => {
+              if (element && cleanedText.includes(element.innerText)) {
+                // Escape special characters in the title text to avoid regex issues
+                const escapedText = element.innerText.replace(
+                  /[.*+?^${}()|[\]\\]/g,
+                  "\\$&"
+                );
+                // Create a regex that can match the text precisely
+                const titleRegex = new RegExp(escapedText, "g");
+                cleanedText = cleanedText.replace(titleRegex, "");
+              }
+            });
+
+            // Hapus semua teks yang mengandung pola (feat. ...)
+            cleanedText = cleanedText.replace(/\(feat\..*?\)/g, "");
+
             return cleanedText.trim();
           }
           currentElement = currentElement.nextElementSibling;
@@ -224,7 +262,21 @@ app.get("/lyrics", async (req, res) => {
       throw new Error("Tidak dapat mengekstrak lirik dengan benar");
     }
 
-    res.json({ title, artist, lyrics });
+    // Deteksi bahasa menggunakan LanguageDetect
+    let detectedLanguages = langDetector.detect(lyrics, 1);
+    let language = {
+      name: "Tidak terdeteksi",
+      probability: 0,
+    };
+
+    if (detectedLanguages && detectedLanguages.length > 0) {
+      language = {
+        name: detectedLanguages[0][0],
+        probability: detectedLanguages[0][1],
+      };
+    }
+
+    res.json({ title, artist, lyrics, language });
   } catch (error) {
     res.status(500).json({ error: error.message });
   } finally {
@@ -284,21 +336,23 @@ app.get("/bulk", (req, res) => {
               const response = await fetch(\`/lyrics?title=\${encodeURIComponent(title)}&artist=\${encodeURIComponent(artist)}\`);
               const data = await response.json();
               if (data.error) {
-                results.push({ title, artist, lyrics: 'Error: ' + data.error });
+                results.push({ title, artist, lyrics: 'Error: ' + data.error, language: { name: 'N/A', probability: 0 } });
               } else {
                 results.push(data);
               }
             } catch (err) {
-              results.push({ title, artist, lyrics: 'Error: ' + err.message });
+              results.push({ title, artist, lyrics: 'Error: ' + err.message, language: { name: 'N/A', probability: 0 } });
             }
           }
 
           // Tampilkan hasil dalam tabel
-          let html = '<table><thead><tr><th>Title</th><th>Artist</th><th>Lyrics</th></tr></thead><tbody>';
+          let html = '<table><thead><tr><th>Title</th><th>Artist</th><th>Language</th><th>Confidence</th><th>Lyrics</th></tr></thead><tbody>';
           results.forEach(r => {
             html += '<tr>';
             html += '<td>' + r.title + '</td>';
             html += '<td>' + r.artist + '</td>';
+            html += '<td>' + (r.language ? r.language.name : 'N/A') + '</td>';
+            html += '<td>' + (r.language && r.language.probability ? (r.language.probability * 100).toFixed(2) + '%' : 'N/A') + '</td>';
             html += '<td><pre style="white-space: pre-wrap;">' + r.lyrics + '</pre></td>';
             html += '</tr>';
           });
@@ -308,11 +362,13 @@ app.get("/bulk", (req, res) => {
         });
 
         exportBtn.addEventListener('click', () => {
-          let csvContent = "data:text/csv;charset=utf-8,Title,Artist,Lyrics\\n";
+          let csvContent = "data:text/csv;charset=utf-8,Title,Artist,Language,Confidence,Lyrics\\n";
           results.forEach(row => {
             // Ganti tanda kutip ganda di lirik agar tidak rusak format CSV
             const lyrics = row.lyrics.replace(/"/g, '""');
-            csvContent += \`"\${row.title}","\\\${row.artist}","\${lyrics}"\\n\`;
+            const language = row.language ? row.language.name : '';
+            const confidence = (row.language && row.language.probability) ? (row.language.probability * 100).toFixed(2) + '%' : '';
+            csvContent += \`"\${row.title}","\${row.artist}","\${language}","\${confidence}","\${lyrics}"\\n\`;
           });
           const encodedUri = encodeURI(csvContent);
           const link = document.createElement("a");
