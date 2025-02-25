@@ -1,0 +1,81 @@
+[2025-02-24T19:25:57.289Z] Server berjalan di http://localhost:3000
+[2025-02-24T19:27:09.366Z] Menerima permintaan: title="fly me to the moon", artist="Frank Sinatra"
+[2025-02-24T19:27:09.369Z] Hit ke-1: Memulai scraping untuk "fly me to the moon Frank Sinatra"
+[2025-02-24T19:27:10.417Z] Memulai browser untuk scraping: "fly me to the moon Frank Sinatra"
+[2025-02-24T19:27:19.729Z] Sukses: Berhasil scraping lirik "fly me to the moon" oleh "Frank Sinatra" (hit ke-1)
+[2025-02-24T19:27:20.115Z] Menerima permintaan: title="Karna Su Sayang", artist="near"
+[2025-02-24T19:27:20.644Z] Hit ke-2: Memulai scraping untuk "Karna Su Sayang near"
+[2025-02-24T19:27:20.969Z] Memulai browser untuk scraping: "Karna Su Sayang near"
+[2025-02-24T19:27:30.182Z] Sukses: Berhasil scraping lirik "Karna Su Sayang" oleh "near" (hit ke-2)
+[2025-02-24T19:27:30.217Z] Menerima permintaan: title="hampa", artist="ari lasso"
+[2025-02-24T19:27:30.218Z] Hit ke-3: Memulai scraping untuk "hampa ari lasso"
+[2025-02-24T19:27:30.690Z] Memulai browser untuk scraping: "hampa ari lasso"
+[2025-02-24T19:27:40.220Z] Sukses: Berhasil scraping lirik "hampa" oleh "ari lasso" (hit ke-3)
+[2025-02-24T19:27:40.247Z] Menerima permintaan: title="how you like that", artist="blackpink"
+[2025-02-24T19:27:40.249Z] Hit ke-4: Memulai scraping untuk "how you like that blackpink"
+[2025-02-24T19:27:40.641Z] Memulai browser untuk scraping: "how you like that blackpink"
+[2025-02-24T19:27:49.738Z] Sukses: Berhasil scraping lirik "how you like that" oleh "blackpink" (hit ke-4)
+[2025-02-24T19:27:49.787Z] Menerima permintaan: title="untungnya", artist="bernadya"
+[2025-02-24T19:27:49.788Z] Hit ke-5: Memulai scraping untuk "untungnya bernadya"
+[2025-02-24T19:27:50.236Z] Memulai browser untuk scraping: "untungnya bernadya"
+[2025-02-24T19:28:01.427Z] Sukses: Berhasil scraping lirik "untungnya" oleh "bernadya" (hit ke-5)
+[2025-02-24T19:28:01.460Z] Menerima permintaan: title="perfect", artist="clarity"
+[2025-02-24T19:28:01.461Z] Hit ke-6: Memulai scraping untuk "perfect clarity"
+[2025-02-24T19:28:01.800Z] Memulai browser untuk scraping: "perfect clarity"
+[2025-02-24T19:28:11.438Z] Sukses: Berhasil scraping lirik "perfect" oleh "clarity" (hit ke-6)
+[2025-02-24T19:28:11.469Z] Menerima permintaan: title="alone", artist="alan walker"
+[2025-02-24T19:28:11.470Z] Hit ke-7: Memulai scraping untuk "alone alan walker"
+[2025-02-24T19:28:11.992Z] Memulai browser untuk scraping: "alone alan walker"
+[2025-02-24T19:28:21.094Z] Sukses: Berhasil scraping lirik "alone" oleh "alan walker" (hit ke-7)
+[2025-02-24T19:28:21.186Z] Menerima permintaan: title="wijayakusuma", artist="ardhito pramono"
+[2025-02-24T19:28:21.187Z] Hit ke-8: Memulai scraping untuk "wijayakusuma ardhito pramono"
+[2025-02-24T19:28:21.567Z] Memulai browser untuk scraping: "wijayakusuma ardhito pramono"
+[2025-02-24T19:28:31.030Z] Sukses: Berhasil scraping lirik "wijayakusuma" oleh "ardhito pramono" (hit ke-8)
+[2025-02-24T19:28:31.356Z] Menerima permintaan: title="anything you want", artist="reality club"
+[2025-02-24T19:28:31.357Z] Hit ke-9: Memulai scraping untuk "anything you want reality club"
+[2025-02-24T19:28:31.673Z] Memulai browser untuk scraping: "anything you want reality club"
+[2025-02-24T19:28:40.724Z] Sukses: Berhasil scraping lirik "anything you want" oleh "reality club" (hit ke-9)
+[2025-02-24T19:28:40.752Z] Menerima permintaan: title="i like me better", artist="lauv"
+[2025-02-24T19:28:40.753Z] Hit ke-10: Memulai scraping untuk "i like me better lauv"
+[2025-02-24T19:28:41.448Z] Memulai browser untuk scraping: "i like me better lauv"
+[2025-02-24T19:28:50.258Z] Sukses: Berhasil scraping lirik "i like me better" oleh "lauv" (hit ke-10)
+[2025-02-24T19:30:22.229Z] Menerima permintaan: title="fly me to the moon", artist="Frank Sinatra"
+[2025-02-24T19:30:22.231Z] Hit ke-1: Memulai scraping untuk "fly me to the moon Frank Sinatra"
+[2025-02-24T19:30:22.502Z] Memulai browser untuk scraping: "fly me to the moon Frank Sinatra"
+[2025-02-24T19:30:31.576Z] Sukses: Berhasil scraping lirik "fly me to the moon" oleh "Frank Sinatra" (hit ke-1)
+[2025-02-24T19:30:31.632Z] Menerima permintaan: title="Karna Su Sayang", artist="near"
+[2025-02-24T19:30:31.633Z] Hit ke-2: Memulai scraping untuk "Karna Su Sayang near"
+[2025-02-24T19:30:32.177Z] Memulai browser untuk scraping: "Karna Su Sayang near"
+[2025-02-24T19:30:41.335Z] Sukses: Berhasil scraping lirik "Karna Su Sayang" oleh "near" (hit ke-2)
+[2025-02-24T19:30:41.556Z] Menerima permintaan: title="hampa", artist="ari lasso"
+[2025-02-24T19:30:41.556Z] Hit ke-3: Memulai scraping untuk "hampa ari lasso"
+[2025-02-24T19:30:42.146Z] Memulai browser untuk scraping: "hampa ari lasso"
+[2025-02-24T19:30:51.478Z] Sukses: Berhasil scraping lirik "hampa" oleh "ari lasso" (hit ke-3)
+[2025-02-24T19:30:51.509Z] Menerima permintaan: title="how you like that", artist="blackpink"
+[2025-02-24T19:30:51.510Z] Hit ke-4: Memulai scraping untuk "how you like that blackpink"
+[2025-02-24T19:30:52.475Z] Memulai browser untuk scraping: "how you like that blackpink"
+[2025-02-24T19:31:01.124Z] Sukses: Berhasil scraping lirik "how you like that" oleh "blackpink" (hit ke-4)
+[2025-02-24T19:31:01.494Z] Menerima permintaan: title="untungnya", artist="bernadya"
+[2025-02-24T19:31:01.494Z] Hit ke-5: Memulai scraping untuk "untungnya bernadya"
+[2025-02-24T19:31:01.809Z] Memulai browser untuk scraping: "untungnya bernadya"
+[2025-02-24T19:31:10.482Z] Sukses: Berhasil scraping lirik "untungnya" oleh "bernadya" (hit ke-5)
+[2025-02-24T19:31:10.518Z] Menerima permintaan: title="perfect", artist="clarity"
+[2025-02-24T19:31:10.520Z] Hit ke-6: Memulai scraping untuk "perfect clarity"
+[2025-02-24T19:31:10.947Z] Memulai browser untuk scraping: "perfect clarity"
+[2025-02-24T19:31:20.396Z] Sukses: Berhasil scraping lirik "perfect" oleh "clarity" (hit ke-6)
+[2025-02-24T19:31:20.422Z] Menerima permintaan: title="alone", artist="alan walker"
+[2025-02-24T19:31:20.423Z] Hit ke-7: Memulai scraping untuk "alone alan walker"
+[2025-02-24T19:31:20.839Z] Memulai browser untuk scraping: "alone alan walker"
+[2025-02-24T19:31:30.507Z] Sukses: Berhasil scraping lirik "alone" oleh "alan walker" (hit ke-7)
+[2025-02-24T19:31:30.581Z] Menerima permintaan: title="wijayakusuma", artist="ardhito pramono"
+[2025-02-24T19:31:30.582Z] Hit ke-8: Memulai scraping untuk "wijayakusuma ardhito pramono"
+[2025-02-24T19:31:31.144Z] Memulai browser untuk scraping: "wijayakusuma ardhito pramono"
+[2025-02-24T19:31:40.424Z] Sukses: Berhasil scraping lirik "wijayakusuma" oleh "ardhito pramono" (hit ke-8)
+[2025-02-24T19:31:40.705Z] Menerima permintaan: title="anything you want", artist="reality club"
+[2025-02-24T19:31:40.706Z] Hit ke-9: Memulai scraping untuk "anything you want reality club"
+[2025-02-24T19:31:40.987Z] Memulai browser untuk scraping: "anything you want reality club"
+[2025-02-24T19:31:49.873Z] Sukses: Berhasil scraping lirik "anything you want" oleh "reality club" (hit ke-9)
+[2025-02-24T19:31:50.016Z] Menerima permintaan: title="i like me better", artist="lauv"
+[2025-02-24T19:31:50.017Z] Hit ke-10: Memulai scraping untuk "i like me better lauv"
+[2025-02-24T19:31:50.628Z] Memulai browser untuk scraping: "i like me better lauv"
+[2025-02-24T19:31:59.957Z] Sukses: Berhasil scraping lirik "i like me better" oleh "lauv" (hit ke-10)
