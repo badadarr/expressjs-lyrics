@@ -17,6 +17,7 @@
     "franc": "^6.2.0",
     "fs": "^0.0.1-security",
     "json2csv": "^6.0.0-alpha.2",
+    "langdetect": "^0.2.1",
     "langs": "^2.0.0",
     "languagedetect": "^2.0.0",
     "path": "^0.12.7",
