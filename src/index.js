@@ -5,88 +5,41 @@ import { detect, detectAll } from "tinyld";
 const app = express();
 const port = 3000;
 
-// Daftar proxy yang tersedia
-const PROXIES = [
-  {
-    ip: "103.112.70.148",
-    httpPort: "50100",
-    httpsPort: "50101",
-    username: "dfgadall",
-    password: "CFXCuK6Zuz",
-  },
-  {
-    ip: "103.112.69.169",
-    httpPort: "50100",
-    httpsPort: "50101",
-    username: "dfgadall",
-    password: "CFXCuK6Zuz",
-  },
-  {
-    ip: "103.112.68.153",
-    httpPort: "50100",
-    httpsPort: "50101",
-    username: "dfgadall",
-    password: "CFXCuK6Zuz",
-  },
-  {
-    ip: "103.112.68.139",
-    httpPort: "50100",
-    httpsPort: "50101",
-    username: "dfgadall",
-    password: "CFXCuK6Zuz",
-  },
-  {
-    ip: "103.112.70.62",
-    httpPort: "50100",
-    httpsPort: "50101",
-    username: "dfgadall",
-    password: "CFXCuK6Zuz",
-  },
-  {
-    ip: "103.112.70.53",
-    httpPort: "50100",
-    httpsPort: "50101",
-    username: "dfgadall",
-    password: "CFXCuK6Zuz",
-  },
-  {
-    ip: "103.112.69.64",
-    httpPort: "50100",
-    httpsPort: "50101",
-    username: "dfgadall",
-    password: "CFXCuK6Zuz",
-  },
-  {
-    ip: "103.112.70.52",
-    httpPort: "50100",
-    httpsPort: "50101",
-    username: "dfgadall",
-    password: "CFXCuK6Zuz",
-  },
-  {
-    ip: "103.112.69.197",
-    httpPort: "50100",
-    httpsPort: "50101",
-    username: "dfgadall",
-    password: "CFXCuK6Zuz",
-  },
-  {
-    ip: "103.112.70.48",
-    httpPort: "50100",
-    httpsPort: "50101",
-    username: "dfgadall",
-    password: "CFXCuK6Zuz",
-  },
+// Daftar proxy dalam format "host:port:username:password"
+const proxies = [
+  "172.120.69.141:50100:dfgadall:CFXCuK6Zuz",
+  "172.120.69.241:50100:dfgadall:CFXCuK6Zuz",
+  "172.120.69.126:50100:dfgadall:CFXCuK6Zuz",
+  "172.120.69.222:50100:dfgadall:CFXCuK6Zuz",
+  "172.120.69.154:50100:dfgadall:CFXCuK6Zuz",
+  "172.120.69.122:50100:dfgadall:CFXCuK6Zuz",
+  "172.120.69.4:50100:dfgadall:CFXCuK6Zuz",
+  "172.120.69.182:50100:dfgadall:CFXCuK6Zuz",
+  "172.120.69.196:50100:dfgadall:CFXCuK6Zuz",
+  "172.120.69.174:50100:dfgadall:CFXCuK6Zuz",
 ];
+
+const MAX_RETRIES = proxies.length; // Menyesuaikan dengan jumlah proxy yang tersedia
 
 // Menyimpan indeks proxy yang terakhir digunakan
 let currentProxyIndex = 0;
 
+// Fungsi untuk parsing string proxy
+function parseProxy(proxyStr) {
+  const [host, port, username, password] = proxyStr.split(":");
+  return {
+    host,
+    port: parseInt(port),
+    username,
+    password,
+  };
+}
+
 // Fungsi untuk mendapatkan proxy berikutnya
 function getNextProxy() {
-  const proxy = PROXIES[currentProxyIndex];
-  currentProxyIndex = (currentProxyIndex + 1) % PROXIES.length; // Rotasi ke proxy berikutnya
-  return proxy;
+  const proxyStr = proxies[currentProxyIndex];
+  currentProxyIndex = (currentProxyIndex + 1) % proxies.length; // Rotasi ke proxy berikutnya
+  return parseProxy(proxyStr); // Parse string proxy menjadi objek
 }
 
 // Fungsi untuk mencoba dengan proxy yang berbeda jika terjadi error
@@ -171,12 +124,12 @@ app.get("/lyrics", async (req, res) => {
 
       let browserContext;
       try {
-        console.log(`Mencoba dengan proxy: ${proxy.ip}:${proxy.httpPort}`);
+        console.log(`Mencoba dengan proxy: ${proxy.host}:${proxy.port}`);
 
         browserContext = await chromium.launchPersistentContext("", {
           headless: true,
           proxy: {
-            server: `${proxy.ip}:${proxy.httpPort}`,
+            server: `${proxy.host}:${proxy.port}`,
             username: proxy.username,
             password: proxy.password,
           },
@@ -193,10 +146,14 @@ app.get("/lyrics", async (req, res) => {
 
         await page.setExtraHTTPHeaders({
           "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36",
         });
 
-        await page.goto(searchUrl, { waitUntil: "domcontentloaded" });
+        await page.goto(searchUrl, {
+          waitUntil: "domcontentloaded",
+          timeout: 90000,
+        });
+
         // Isi form pencarian dan submit
         await page.fill(".search .form-control", searchQuery);
         await page.click('button.btn.btn-primary[type="submit"]');
@@ -523,7 +480,7 @@ app.get("/lyrics", async (req, res) => {
           artist,
           lyrics: finalLyrics, // Lirik utama (Romanized atau clean lyrics)
           language,
-          usedProxy: `${proxy.ip}:${proxy.httpPort}`, // Tambahkan info proxy yang digunakan
+          usedProxy: `${proxy.host}:${proxy.port}`, // Tambahkan info proxy yang digunakan
         };
       } finally {
         if (browserContext) await browserContext.close();
@@ -539,6 +496,7 @@ app.get("/lyrics", async (req, res) => {
     });
   }
 });
+
 // Endpoint UI untuk input bulk dan export CSV dengan perbandingan deteksi bahasa
 app.get("/bulk", (req, res) => {
   res.send(`
