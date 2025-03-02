@@ -4,191 +4,122 @@ import { chromium } from "playwright";
 const app = express();
 const port = 3000;
 
-// Endpoint untuk scraping lirik per pasangan title & artist
-app.get("/lyrics", async (req, res) => {
-  const title = req.query.title;
-  const artist = req.query.artist;
-
-  if (!title || !artist) {
-    return res
-      .status(400)
-      .json({ error: "Parameter 'title' dan 'artist' harus disediakan." });
-  }
-
-  const searchQuery = `${title} ${artist}`;
-  const searchUrl = `https://search.azlyrics.com/search.php?q=${encodeURIComponent(
-    searchQuery
-  )}`;
-
-  let browser;
-  try {
-    // Jalankan browser dengan tampilan GUI (headless: false)
-    browser = await chromium.launch({
-      headless: true,
-      timeout: 60000,
-    });
-
-    const page = await browser.newPage();
-    await page.setDefaultTimeout(60000);
-    await page.setDefaultNavigationTimeout(60000);
-
-    // Tangani dialog/pop-up
-    page.on("dialog", async (dialog) => {
-      await dialog.dismiss();
-    });
-
-    await page.setExtraHTTPHeaders({
-      "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-    });
-
-    // Buka halaman pencarian
-    await page.goto(searchUrl, { waitUntil: "domcontentloaded" });
-    await page.waitForSelector(".search .form-control", { timeout: 10000 });
-
-    // Isi form pencarian dan submit
-    await page.fill(".search .form-control", searchQuery);
-    await page.click('button.btn.btn-primary[type="submit"]');
-
-    // Tunggu hasil pencarian
-    await page.waitForSelector("td.text-left.visitedlyr a", { timeout: 30000 });
-    const resultsCount = await page
-      .locator("td.text-left.visitedlyr a")
-      .count();
-    if (resultsCount === 0) {
-      throw new Error("Tidak ada hasil pencarian");
-    }
-
-    // Ambil URL hasil pertama
-    const firstResultUrl = await page
-      .locator("td.text-left.visitedlyr a")
-      .first()
-      .getAttribute("href");
-
-    // Buka halaman lirik
-    await page.goto(firstResultUrl, { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(3000);
-
-    // Ekstrak lirik
-    let lyrics = await page.evaluate(() => {
-      try {
-        // Cari div dengan komentar khusus AZLyrics
-        const lyricsDiv = Array.from(document.querySelectorAll("div")).find(
-          (div) => {
-            const text = div.innerHTML || "";
-            return text.includes(
-              "Usage of azlyrics.com content by any third-party lyrics provider is prohibited by our licensing agreement"
-            );
-          }
-        );
-        if (!lyricsDiv) return null;
-
-        let rawText = lyricsDiv.innerText;
-        rawText = rawText.replace(
-          "Usage of azlyrics.com content by any third-party lyrics provider is prohibited by our licensing agreement. Sorry about that.",
-          ""
-        );
-        let cleanedText = rawText.trim();
-
-        // Hapus konten dari elemen dengan class 'noprint'
-        const noprintElements = document.querySelectorAll(".noprint");
-        noprintElements.forEach((element) => {
-          const noprintText = element.innerText;
-          if (noprintText && cleanedText.includes(noprintText)) {
-            cleanedText = cleanedText.replace(noprintText, "");
-          }
-        });
-
-        // Hapus konten setelah "Submit Corrections" jika ada
-        const submitIndex = cleanedText.indexOf("Submit Corrections");
-        if (submitIndex !== -1) {
-          cleanedText = cleanedText.substring(0, submitIndex);
-        }
-        return cleanedText.trim();
-      } catch (error) {
-        return null;
-      }
-    });
-
-    // Alternatif jika metode pertama gagal
-    if (!lyrics) {
-      lyrics = await page.evaluate(() => {
-        const songTitle = document.querySelector("b");
-        if (!songTitle) return null;
-        let currentElement = songTitle.nextElementSibling;
-        while (currentElement) {
-          if (currentElement.tagName === "DIV") {
-            let rawText = currentElement.innerText;
-            let cleanedText = rawText;
-            const noprintElements = document.querySelectorAll(".noprint");
-            noprintElements.forEach((el) => {
-              if (el.innerText && cleanedText.includes(el.innerText)) {
-                cleanedText = cleanedText.replace(el.innerText, "");
-              }
-            });
-            return cleanedText.trim();
-          }
-          currentElement = currentElement.nextElementSibling;
-        }
-        return null;
-      });
-    }
-
-    // Bersihkan lirik dari teks tambahan (misalnya "Submit Corrections", "Writer(s):", dll)
-    if (lyrics) {
-      const boundaries = [
-        "Submit Corrections",
-        "Writer(s):",
-        "Thanks to",
-        "Follow",
-        "Copyright:",
-      ];
-      for (const boundary of boundaries) {
-        const boundaryIndex = lyrics.indexOf(boundary);
-        if (boundaryIndex !== -1) {
-          lyrics = lyrics.substring(0, boundaryIndex).trim();
-        }
-      }
-      lyrics = lyrics
-        .replace(/^[\s\n]+|[\s\n]+$/g, "")
-        .replace(/\n{3,}/g, "\n\n")
-        .trim();
-    } else {
-      throw new Error("Tidak dapat mengekstrak lirik dengan benar");
-    }
-
-    res.json({ title, artist, lyrics });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  } finally {
-    if (browser) await browser.close();
-  }
-});
-
-// Endpoint UI untuk input bulk dan export CSV
+// Endpoint UI untuk input bulk dan export CSV dengan perbandingan deteksi bahasa
 app.get("/bulk", (req, res) => {
   res.send(`
     <!DOCTYPE html>
     <html>
     <head>
-      <title>Bulk Lyrics Scraper</title>
+      <title>Bulk Lyrics Scraper with Language Detection</title>
       <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
         textarea { width: 100%; height: 150px; }
         table, th, td { border: 1px solid #ccc; border-collapse: collapse; padding: 8px; }
         table { width: 100%; margin-top: 20px; }
         .error { color: red; }
+        .success { color: green; }
+        .language-compare { 
+          margin-top: 5px;
+          padding: 5px;
+          background-color: #f9f9f9;
+          border-radius: 4px;
+          font-size: 0.9em;
+        }
+        .agreement {
+          font-weight: bold;
+          margin-top: 8px;
+        }
+        .agree { color: green; }
+        .disagree { color: orange; }
+        .tabs {
+          display: flex;
+          margin-bottom: 10px;
+        }
+        .tab {
+          padding: 10px 15px;
+          cursor: pointer;
+          border: 1px solid #ccc;
+          background-color: #f1f1f1;
+          margin-right: 5px;
+        }
+        .tab.active {
+          background-color: #e0e0e0;
+          border-bottom: 2px solid #4CAF50;
+        }
+        .tab-content {
+          display: none;
+          border: 1px solid #ccc;
+          padding: 15px;
+        }
+        .tab-content.active {
+          display: block;
+        }
+        .lang-pill {
+          display: inline-block;
+          padding: 2px 8px;
+          margin: 2px;
+          border-radius: 12px;
+          background-color: #e0e0e0;
+          font-size: 0.8em;
+        }
+        .lang-probability {
+          font-size: 0.9em;
+          color: #555;
+        }
+        pre {
+          white-space: pre-wrap;
+          max-height: 150px;
+          overflow-y: auto;
+        }
+        .collapsible {
+          cursor: pointer;
+          padding: 5px;
+          background-color: #f1f1f1;
+          width: 100%;
+          text-align: left;
+          border: none;
+          outline: none;
+        }
+        .content {
+          display: none;
+          overflow: hidden;
+          background-color: #f9f9f9;
+          padding: 0 18px;
+        }
       </style>
     </head>
     <body>
-      <h1>Bulk Lyrics Scraper</h1>
-      <p>Masukkan setiap pasangan Title dan Artist dalam satu baris, dipisahkan dengan koma.<br>Contoh: <code>Judul Lagu, Nama Artis</code></p>
-      <textarea id="bulkInput" placeholder="Judul Lagu, Nama Artis"></textarea><br>
-      <button id="processBtn">Proses</button>
-      <button id="exportBtn" style="display:none;">Export CSV</button>
-      <div id="result"></div>
-
+      <h1>Bulk Lyrics Scraper with Language Detection</h1>
+      
+      <div class="tabs">
+        <div class="tab active" data-tab="bulk-scrape">Bulk Scrape</div>
+      </div>
+      
+      <div id="bulk-scrape" class="tab-content active">
+        <p>Masukkan setiap pasangan Title dan Artist dalam satu baris, dipisahkan dengan koma.<br>Contoh: <code>Judul Lagu, Nama Artis</code></p>
+        <textarea id="bulkInput" placeholder="Judul Lagu, Nama Artis"></textarea><br>
+        <button id="processBtn">Proses</button>
+        <button id="exportBtn" style="display:none;">Export CSV</button>
+        <div id="result"></div>
+      </div>
       <script>
+        // Tab functionality
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        tabs.forEach(tab => {
+          tab.addEventListener('click', () => {
+            // Remove active class from all tabs and contents
+            tabs.forEach(t => t.classList.remove('active'));
+            tabContents.forEach(c => c.classList.remove('active'));
+            
+            // Add active class to current tab and content
+            tab.classList.add('active');
+            document.getElementById(tab.dataset.tab).classList.add('active');
+          });
+        });
+        
+        // Bulk scraping functionality
         const processBtn = document.getElementById('processBtn');
         const exportBtn = document.getElementById('exportBtn');
         const bulkInput = document.getElementById('bulkInput');
@@ -217,22 +148,36 @@ app.get("/bulk", (req, res) => {
               const response = await fetch(\`/lyrics?title=\${encodeURIComponent(title)}&artist=\${encodeURIComponent(artist)}\`);
               const data = await response.json();
               if (data.error) {
-                results.push({ title, artist, lyrics: 'Error: ' + data.error });
+                results.push({ title, artist, lyrics: 'Error: ' + data.error, languageDetectionResults: null });
               } else {
                 results.push(data);
               }
             } catch (err) {
-              results.push({ title, artist, lyrics: 'Error: ' + err.message });
+              results.push({ title, artist, lyrics: 'Error: ' + err.message, languageDetectionResults: null });
             }
           }
 
           // Tampilkan hasil dalam tabel
-          let html = '<table><thead><tr><th>Title</th><th>Artist</th><th>Lyrics</th></tr></thead><tbody>';
+          let html = '<table><thead><tr><th>Title</th><th>Artist</th><th>Language Detection</th><th>Lyrics</th></tr></thead><tbody>';
           results.forEach(r => {
             html += '<tr>';
             html += '<td>' + r.title + '</td>';
             html += '<td>' + r.artist + '</td>';
-            html += '<td><pre style="white-space: pre-wrap;">' + r.lyrics + '</pre></td>';
+            
+            // Language detection section
+            if (r.language) {
+              html += '<td>';
+              html += '<div><strong>TinyLD:</strong> ';
+              html += '<span class="lang-pill">' + r.language.name + '</span> ';
+              html += '<span class="lang-probability">(' + (r.language.probability * 100).toFixed(2) + '%)</span>';
+              html += '</div>';
+              html += '</td>';
+            } else {
+              html += '<td>N/A</td>';
+            }
+            
+            // Lyrics column
+            html += '<td><pre>' + r.lyrics + '</pre></td>';
             html += '</tr>';
           });
           html += '</tbody></table>';
@@ -241,19 +186,85 @@ app.get("/bulk", (req, res) => {
         });
 
         exportBtn.addEventListener('click', () => {
-          let csvContent = "data:text/csv;charset=utf-8,Title,Artist,Lyrics\\n";
+          let csvContent = "data:text/csv;charset=utf-8,Title,Artist,Detected Language,Confidence,Lyrics\\n";
           results.forEach(row => {
-            // Ganti tanda kutip ganda di lirik agar tidak rusak format CSV
+            // Escape quotes in lyrics
             const lyrics = row.lyrics.replace(/"/g, '""');
-            csvContent += \`"\${row.title}","\\\${row.artist}","\${lyrics}"\\n\`;
+            
+            // Set default values
+            let lang = 'N/A', conf = '';
+            
+            // Extract language detection results if available
+            if (row.language) {
+              lang = row.language.name;
+              conf = (row.language.probability * 100).toFixed(2) + '%';
+            }
+            
+            csvContent += \`"\${row.title}","\${row.artist}","\${lang}","\${conf}","\${lyrics}"\\n\`;
           });
+          
           const encodedUri = encodeURI(csvContent);
           const link = document.createElement("a");
           link.setAttribute("href", encodedUri);
-          link.setAttribute("download", "lyrics.csv");
+          link.setAttribute("download", "lyrics_with_language.csv");
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
+        });
+        
+        // Language test functionality
+        const testBtn = document.getElementById('testBtn');
+        const textInput = document.getElementById('textInput');
+        const testResultDiv = document.getElementById('testResult');
+        
+        testBtn.addEventListener('click', async () => {
+          const text = textInput.value.trim();
+          if (!text) {
+            testResultDiv.innerHTML = '<p class="error">Text tidak boleh kosong.</p>';
+            return;
+          }
+          
+          testResultDiv.innerHTML = '<p>Mendeteksi bahasa, harap tunggu...</p>';
+          
+          try {
+            const response = await fetch('/test-language', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ text })
+            });
+            
+            const result = await response.json();
+            
+            if (result.error) {
+              testResultDiv.innerHTML = '<p class="error">Error: ' + result.error + '</p>';
+              return;
+            }
+            
+            // Display detailed results
+            let html = '<div class="language-compare">';
+            
+            // Text preview
+            html += '<div><strong>Text Preview:</strong> ' + result.text + '</div>';
+            html += '<div><strong>Text Length:</strong> ' + result.textLength + ' characters</div>';
+            html += '<hr>';
+            
+            // TinyLD results
+            html += '<div><strong>TinyLD Results:</strong></div>';
+            html += '<div>Main language: <span class="lang-pill">' + result.tinyld.mainLanguageName + '</span></div>';
+            html += '<div>Other detected languages:</div><ul>';
+            result.tinyld.detectedLanguages.forEach(lang => {
+              html += '<li><span class="lang-pill">' + lang.name + '</span> <span class="lang-probability">(' + (lang.accuracy * 100).toFixed(2) + '%)</span></li>';
+            });
+            html += '</ul>';
+            
+            html += '</div>'; // End language-compare div
+            
+            testResultDiv.innerHTML = html;
+          } catch (err) {
+            testResultDiv.innerHTML = '<p class="error">Error: ' + err.message + '</p>';
+          }
         });
       </script>
     </body>
