@@ -1,6 +1,7 @@
 import express from "express";
 import { chromium } from "playwright";
-import { detect, detectAll } from "tinyld";
+import { detect, detectAll } from "tinyld";\
+
 
 const app = express();
 const port = 3000;
@@ -18,9 +19,6 @@ const proxies = [
   "172.120.69.196:50100:dfgadall:CFXCuK6Zuz",
   "172.120.69.174:50100:dfgadall:CFXCuK6Zuz",
 ];
-
-const MAX_RETRIES = proxies.length; // Menyesuaikan dengan jumlah proxy yang tersedia
-
 // Menyimpan indeks proxy yang terakhir digunakan
 let currentProxyIndex = 0;
 
