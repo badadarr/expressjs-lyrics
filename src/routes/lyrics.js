@@ -1,5 +1,5 @@
 import express from "express";
-import { tryWithDifferentProxies } from "../utils/proxymanager.js";
+import { tryWithDifferentProxies } from "../utils/proxyManager.js";
 import scrapers from "../scrapers/index.js";
 
 const router = express.Router();
@@ -16,11 +16,29 @@ router.get("/lyrics", async (req, res) => {
   }
 
   try {
+    // Function to try multiple scrapers in sequence
+    const trySources = async (title, artist, proxy) => {
+      try {
+        // First try AzLyrics
+        return await scrapers.scrapeLyricsWithErrorHandling(
+          title,
+          artist,
+          proxy
+        );
+      } catch (error) {
+        console.log(`AZLyrics failed: ${error.message}, trying Musixmatch...`);
+        // If AzLyrics fails, try Musixmatch
+        return await scrapers.scrapeMusixmatchLyricsWithErrorHandling(
+          title,
+          artist,
+          proxy
+        );
+      }
+    };
+
     // Use proxy rotation system with retry mechanism
     const result = await tryWithDifferentProxies(async (proxy) => {
-      // Currently only using AZLyrics, but this can be expanded in the future
-      // You could add logic here to try different scrapers in sequence or in parallel
-      return await scrapers.azLyrics.scrapeLyrics(title, artist, proxy);
+      return await trySources(title, artist, proxy);
     });
 
     // Send response to client
@@ -34,20 +52,3 @@ router.get("/lyrics", async (req, res) => {
 });
 
 export default router;
-
-
-
-// // Example of trying multiple scrapers in sequence
-// const trySources = async (title, artist, proxy) => {
-//     try {
-//       return await scrapers.azLyrics.scrapeLyrics(title, artist, proxy);
-//     } catch (error) {
-//       console.log(`AZLyrics failed: ${error.message}, trying Genius...`);
-//       return await scrapers.geniusLyrics.scrapeLyrics(title, artist, proxy);
-//     }
-//   };
-  
-//   // In your route handler:
-//   const result = await tryWithDifferentProxies(async (proxy) => {
-//     return await trySources(title, artist, proxy);
-//   });
