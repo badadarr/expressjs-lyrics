@@ -1,15 +1,15 @@
 // List of proxies in "host:port:username:password" format
 export const proxies = [
-  "172.120.69.141:50100:dfgadall:CFXCuK6Zuz",
-  "172.120.69.241:50100:dfgadall:CFXCuK6Zuz",
-  "172.120.69.126:50100:dfgadall:CFXCuK6Zuz",
-  "172.120.69.222:50100:dfgadall:CFXCuK6Zuz",
-  "172.120.69.154:50100:dfgadall:CFXCuK6Zuz",
-  "172.120.69.122:50100:dfgadall:CFXCuK6Zuz",
-  "172.120.69.4:50100:dfgadall:CFXCuK6Zuz",
-  "172.120.69.182:50100:dfgadall:CFXCuK6Zuz",
-  "172.120.69.196:50100:dfgadall:CFXCuK6Zuz",
-  "172.120.69.174:50100:dfgadall:CFXCuK6Zuz",
+  "103.54.154.190:50100:dfgadall:CFXCuK6Zuz",
+  "103.54.154.197:50100:dfgadall:CFXCuK6Zuz",
+  "103.54.154.60:50100:dfgadall:CFXCuK6Zuz",
+  "103.54.154.152:50100:dfgadall:CFXCuK6Zuz",
+  "103.54.154.65:50100:dfgadall:CFXCuK6Zuz",
+  "103.54.154.74:50100:dfgadall:CFXCuK6Zuz",
+  "103.54.154.83:50100:dfgadall:CFXCuK6Zuz",
+  "103.54.154.217:50100:dfgadall:CFXCuK6Zuz",
+  "103.54.154.25:50100:dfgadall:CFXCuK6Zuz",
+  "103.54.154.51:50100:dfgadall:CFXCuK6Zuz",
 ];
 
 export default proxies;
