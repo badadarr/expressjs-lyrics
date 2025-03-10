@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import userAgentManager from "./userAgentManager.js";
 
 /**
  * Creates a browser context with proxy settings
@@ -14,7 +15,7 @@ export async function createBrowserContext(proxy) {
       password: proxy.password,
     },
     timeout: 60000,
-    args: [`--proxy-server=http://${proxy.host}:${proxy.port}`],
+    args: [`--proxy-server=${proxy.type}://${proxy.host}:${proxy.port}`],
   });
 }
 
@@ -32,14 +33,31 @@ export async function setupPage(page) {
     await dialog.dismiss();
   });
 
-  // Set user agent
+  // Ambil User-Agent secara acak dari userAgentManager.js
+  const randomUserAgent = userAgentManager.getRandomUserAgent();
+
+  // Tetapkan User-Agent pada page
   await page.setExtraHTTPHeaders({
-    "User-Agent":
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36",
+    "User-Agent": randomUserAgent,
   });
+
+  console.log(`User-Agent yang digunakan: ${randomUserAgent}`);
+}
+
+/**
+ * Checks if the User-Agent is set correctly
+ * @param {Object} page - Playwright page object
+ * @returns {Promise<void>}
+ */
+export async function checkUserAgent(page) {
+  await page.goto("https://httpbin.org/headers");
+
+  const headersText = await page.evaluate(() => document.body.innerText);
+  console.log("Headers received from server:", headersText);
 }
 
 export default {
   createBrowserContext,
   setupPage,
+  checkUserAgent,
 };
