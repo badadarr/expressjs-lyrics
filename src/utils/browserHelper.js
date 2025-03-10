@@ -8,7 +8,7 @@ import userAgentManager from "./userAgentManager.js";
  */
 export async function createBrowserContext(proxy) {
   return await chromium.launchPersistentContext("", {
-    headless: false,
+    headless: true,
     proxy: {
       server: `${proxy.host}:${proxy.port}`,
       username: proxy.username,
