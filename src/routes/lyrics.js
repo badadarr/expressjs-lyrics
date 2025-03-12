@@ -19,7 +19,12 @@ const trySources = async (title, artist, proxy) => {
     return await scrapers.azLyrics.scrapeLyrics(title, artist, proxy);
   } catch (error) {
     console.log(`AZLyrics failed: ${error.message}, trying Genius...`);
-    return await scrapers.geniusLyrics.scrapeLyrics(title, artist, proxy);
+    try {
+      return await scrapers.geniusLyrics.scrapeLyrics(title, artist, proxy);
+    } catch (geniusError) {
+      console.log(`Genius failed: ${geniusError.message}`);
+      throw new Error("Failed to fetch lyrics from both AZLyrics and Genius.");
+    }
   }
 };
 
