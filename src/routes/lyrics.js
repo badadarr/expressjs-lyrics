@@ -1,5 +1,8 @@
 import express from "express";
-import { tryWithDifferentProxies } from "../utils/proxymanager.js";
+import {
+  getNextProxy,
+  tryWithDifferentProxies,
+} from "../utils/proxymanager.js";
 import scrapers from "../scrapers/index.js";
 
 const router = express.Router();
@@ -26,12 +29,12 @@ router.get("/lyrics", async (req, res) => {
   const artist = req.query.artist;
 
   if (!title || !artist) {
-    return res
-      .status(400)
-      .json({ error: "Parameters 'title' and 'artist' are required." });
+    return res.status(400).json({ error: "Title and artist are required." });
   }
 
+  const proxy = getNextProxy(); // Dapatkan proxy
   try {
+
     // Try AZLyrics first, then Genius if it fails
     const result = await tryWithDifferentProxies((proxy) =>
       trySources(title, artist, proxy)
