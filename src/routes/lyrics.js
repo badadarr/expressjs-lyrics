@@ -4,6 +4,22 @@ import scrapers from "../scrapers/index.js";
 
 const router = express.Router();
 
+/**
+ * Attempts to scrape lyrics using multiple sources.
+ * @param {string} title - Song title
+ * @param {string} artist - Artist name
+ * @param {object} proxy - Proxy object
+ * @returns {Promise<string>} - Scraped lyrics
+ */
+const trySources = async (title, artist, proxy) => {
+  try {
+    return await scrapers.azLyrics.scrapeLyrics(title, artist, proxy);
+  } catch (error) {
+    console.log(`AZLyrics failed: ${error.message}, trying Genius...`);
+    return await scrapers.geniusLyrics.scrapeLyrics(title, artist, proxy);
+  }
+};
+
 // GET /lyrics route
 router.get("/lyrics", async (req, res) => {
   const title = req.query.title;
@@ -16,26 +32,21 @@ router.get("/lyrics", async (req, res) => {
   }
 
   try {
-    // Use proxy rotation system with retry mechanism
-    const result = await tryWithDifferentProxies(async (proxy) => {
-      // Currently only using AZLyrics, but this can be expanded in the future
-      // You could add logic here to try different scrapers in sequence or in parallel
-      return await scrapers.azLyrics.scrapeLyrics(title, artist, proxy);
-    });
+    // Try AZLyrics first, then Genius if it fails
+    const result = await tryWithDifferentProxies((proxy) =>
+      trySources(title, artist, proxy)
+    );
 
-    // Send response to client
-    res.json(result);
+    res.json({ lyrics: result });
   } catch (error) {
     res.status(500).json({
       error: error.message,
-      message: "Failed to fetch lyrics after trying all proxies",
+      message: "Failed to fetch lyrics after trying all proxies.",
     });
   }
 });
 
 export default router;
-
-
 
 // // Example of trying multiple scrapers in sequence
 // const trySources = async (title, artist, proxy) => {
@@ -46,7 +57,7 @@ export default router;
 //       return await scrapers.geniusLyrics.scrapeLyrics(title, artist, proxy);
 //     }
 //   };
-  
+
 //   // In your route handler:
 //   const result = await tryWithDifferentProxies(async (proxy) => {
 //     return await trySources(title, artist, proxy);
