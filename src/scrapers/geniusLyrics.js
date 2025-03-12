@@ -14,7 +14,7 @@ export async function scrapeLyrics(title, artist) {
     await setupPage(page);
 
     try {
-      const searchQuery = `${title} ${artist} lyrics`;
+      const searchQuery = `${title} ${artist}`;
       console.log(`Searching for: ${searchQuery}`);
 
       await page.goto("https://genius.com");
