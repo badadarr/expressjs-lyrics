@@ -7,6 +7,22 @@ import scrapers from "../scrapers/index.js";
 
 const router = express.Router();
 
+/**
+ * Attempts to scrape lyrics using multiple sources.
+ * @param {string} title - Song title
+ * @param {string} artist - Artist name
+ * @param {object} proxy - Proxy object
+ * @returns {Promise<string>} - Scraped lyrics
+ */
+const trySources = async (title, artist, proxy) => {
+  try {
+    return await scrapers.azLyrics.scrapeLyrics(title, artist, proxy);
+  } catch (error) {
+    console.log(`AZLyrics failed: ${error.message}, trying Genius...`);
+    return await scrapers.geniusLyrics.scrapeLyrics(title, artist, proxy);
+  }
+};
+
 // GET /lyrics route
 router.get("/lyrics", async (req, res) => {
   const title = req.query.title;
@@ -18,13 +34,18 @@ router.get("/lyrics", async (req, res) => {
 
   const proxy = getNextProxy(); // Dapatkan proxy
   try {
-    const lyrics = await tryWithDifferentProxies(() =>
-      scrapers.scrapeLyrics(title, artist, proxy)
+
+    // Try AZLyrics first, then Genius if it fails
+    const result = await tryWithDifferentProxies((proxy) =>
+      trySources(title, artist, proxy)
     );
-    return res.json({ lyrics });
+
+    res.json({ lyrics: result });
   } catch (error) {
-    console.error(`Error scraping lyrics: ${error.message}`);
-    return res.status(500).json({ error: "Failed to fetch lyrics." });
+    res.status(500).json({
+      error: error.message,
+      message: "Failed to fetch lyrics after trying all proxies.",
+    });
   }
 });
 
