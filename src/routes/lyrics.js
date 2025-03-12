@@ -34,7 +34,6 @@ router.get("/lyrics", async (req, res) => {
 
   const proxy = getNextProxy(); // Dapatkan proxy
   try {
-
     // Try AZLyrics first, then Genius if it fails
     const result = await tryWithDifferentProxies((proxy) =>
       trySources(title, artist, proxy)
