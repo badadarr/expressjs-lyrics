@@ -101,23 +101,11 @@ export async function tryWithDifferentProxies(asyncFn, maxRetries = 3) {
       console.log(
         `Trying with proxy: ${proxy.host}:${proxy.port} (Type: ${proxy.type})`
       );
-
-      // Cek apakah proxy valid sebelum digunakan
-      const isProxyValid = await checkProxy(proxy);
-      if (!isProxyValid) {
-        console.log("Skipping invalid proxy...");
-        continue;
-      }
-
       return await asyncFn(proxy);
     } catch (error) {
       lastError = error;
-      console.log(
-        `Attempt ${attempt + 1} failed: ${error.message}. Trying next proxy...`
-      );
-      await new Promise((resolve) =>
-        setTimeout(resolve, Math.random() * 5000 + 2000)
-      ); // Random delay 2-7 detik
+      console.log(`Proxy ${proxy.host}:${proxy.port} failed: ${error.message}`);
+      console.log(`Skipping invalid proxy...`);
     }
   }
   throw new Error(
