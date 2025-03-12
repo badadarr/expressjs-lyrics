@@ -1,10 +1,10 @@
 import { createBrowserContext, setupPage } from "../utils/browserHelper.js";
 import { tryWithDifferentProxies } from "../utils/proxymanager.js";
+
 /**
  * Scrapes lyrics from Genius based on song title and artist.
  * @param {string} title - Song title
  * @param {string} artist - Artist name
- * @param {string}-optional additional parameter - Romanized title
  * @returns {Promise<string>} - Scraped lyrics
  */
 export async function scrapeLyrics(title, artist) {
@@ -18,9 +18,25 @@ export async function scrapeLyrics(title, artist) {
       console.log(`Searching for: ${searchQuery}`);
 
       await page.goto("https://genius.com");
-      await page.waitForSelector('input[name="q"]');
+
+      // Handle Cloudflare verification page
+      try {
+        await page.waitForSelector('input[name="q"]', { timeout: 10000 });
+      } catch (error) {
+        console.log("Cloudflare verification detected, waiting...");
+        await page.waitForTimeout(15000); // Wait for 15 seconds
+        await page.reload(); // Reload the page
+        await page.waitForSelector('input[name="q"]', { timeout: 10000 });
+      }
+
       await page.fill('input[name="q"]', searchQuery);
       await page.keyboard.press("Enter");
+
+      // Simulate human interaction
+      await page.mouse.move(100, 100);
+      await page.waitForTimeout(2000); // Wait for 2 seconds
+      await page.mouse.move(200, 200);
+      await page.waitForTimeout(2000); // Wait for 2 seconds
 
       try {
         await page.waitForSelector("search-result-item", { timeout: 10000 });
