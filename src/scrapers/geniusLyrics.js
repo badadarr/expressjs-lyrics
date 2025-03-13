@@ -1,5 +1,7 @@
 import { createBrowserContext, setupPage } from "../utils/browserHelper.js";
 import { tryWithDifferentProxies } from "../utils/proxymanager.js";
+import { getLanguageInfo } from "../utils/languageDetector.js";
+
 
 /**
  * Scrapes lyrics from Genius based on song title and artist.

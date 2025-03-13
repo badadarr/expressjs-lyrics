@@ -12,14 +12,20 @@ const router = express.Router();
  * @param {string} title - Song title
  * @param {string} artist - Artist name
  * @param {object} proxy - Proxy object
- * @returns {Promise<string>} - Scraped lyrics
+ * @returns {Promise<object>} - Scraped lyrics and source
  */
 const trySources = async (title, artist, proxy) => {
   try {
-    return await scrapers.azLyrics.scrapeLyrics(title, artist, proxy);
+    const lyrics = await scrapers.azLyrics.scrapeLyrics(title, artist, proxy);
+    return { lyrics, source: "azLyrics" };
   } catch (error) {
     console.log(`AZLyrics failed: ${error.message}, trying Genius...`);
-    return await scrapers.geniusLyrics.scrapeLyrics(title, artist, proxy);
+    const lyrics = await scrapers.geniusLyrics.scrapeLyrics(
+      title,
+      artist,
+      proxy
+    );
+    return { lyrics, source: "geniusLyrics" };
   }
 };
 
@@ -39,7 +45,7 @@ router.get("/lyrics", async (req, res) => {
       trySources(title, artist, proxy)
     );
 
-    res.json({ lyrics: result });
+    res.json({ lyrics: result.lyrics, source: result.source });
   } catch (error) {
     res.status(500).json({
       error: error.message,
