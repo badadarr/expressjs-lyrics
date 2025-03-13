@@ -2,12 +2,11 @@ import { createBrowserContext, setupPage } from "../utils/browserHelper.js";
 import { tryWithDifferentProxies } from "../utils/proxymanager.js";
 import { getLanguageInfo } from "../utils/languageDetector.js";
 
-
 /**
  * Scrapes lyrics from Genius based on song title and artist.
  * @param {string} title - Song title
  * @param {string} artist - Artist name
- * @returns {Promise<string>} - Scraped lyrics
+ * @returns {Promise<object>} - Scraped lyrics and language info
  */
 export async function scrapeLyrics(title, artist) {
   return await tryWithDifferentProxies(async (proxy) => {
@@ -60,8 +59,20 @@ export async function scrapeLyrics(title, artist) {
       );
 
       console.log("Lyrics retrieved successfully!");
+
+      // Detect language of the lyrics
+      const languageInfo = await getLanguageInfo(lyrics);
+
       await context.close();
-      return lyrics;
+      return {
+        lyrics: {
+          title,
+          artist,
+          lyrics,
+          language: languageInfo,
+          usedProxy: `${proxy.host}:${proxy.port}`,
+        },
+      };
     } catch (error) {
       console.error("Error during scraping Genius:", error.message);
       await context.close();
