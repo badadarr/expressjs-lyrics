@@ -16,16 +16,16 @@ const router = express.Router();
  */
 const trySources = async (title, artist, proxy) => {
   try {
-    const lyrics = await scrapers.azLyrics.scrapeLyrics(title, artist, proxy);
-    return { lyrics, source: "azLyrics" };
+    const result = await scrapers.azLyrics.scrapeLyrics(title, artist, proxy);
+    return { lyrics: result, source: "azLyrics" };
   } catch (error) {
     console.log(`AZLyrics failed: ${error.message}, trying Genius...`);
-    const lyrics = await scrapers.geniusLyrics.scrapeLyrics(
+    const result = await scrapers.geniusLyrics.scrapeLyrics(
       title,
       artist,
       proxy
     );
-    return { lyrics, source: "geniusLyrics" };
+    return { lyrics: result, source: "geniusLyrics" };
   }
 };
 

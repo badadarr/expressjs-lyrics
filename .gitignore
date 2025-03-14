@@ -1,0 +1,14 @@
+# Ignore proxies.js
+/src/config/proxies.js
+
+# Ignore ui.js
+/ui.js
+
+# Ignore scraper.log
+/scraper.log
+
+# Ignore scraper.js
+/scraper.js
+
+# Ignore hit_counter.txt
+/hit_counter.txt
