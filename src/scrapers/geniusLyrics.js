@@ -63,15 +63,17 @@ export async function scrapeLyrics(title, artist) {
       // Detect language of the lyrics
       const languageInfo = await getLanguageInfo(lyrics);
 
+      // Check for explicit content
+      const isExplicit = checkExplicitContent(title, lyrics);
+
       await context.close();
       return {
-        lyrics: {
-          title,
-          artist,
-          lyrics,
-          language: languageInfo,
-          usedProxy: `${proxy.host}:${proxy.port}`,
-        },
+        title,
+        artist,
+        lyrics,
+        language: languageInfo.code, // Use only the language code
+        explicit: isExplicit,
+        usedProxy: `${proxy.host}:${proxy.port}`,
       };
     } catch (error) {
       console.error("Error during scraping Genius:", error.message);
@@ -79,6 +81,25 @@ export async function scrapeLyrics(title, artist) {
       throw error;
     }
   });
+}
+
+/**
+ * Checks if the lyrics contain explicit content.
+ * @param {string} title - Song title
+ * @param {string} lyrics - Song lyrics
+ * @returns {boolean} - True if explicit content is detected, otherwise false
+ */
+function checkExplicitContent(title, lyrics) {
+  const explicitKeywords = ["explicit", "mature", "adult", "nsfw"];
+  const explicitWords = ["fuck", "shit", "bitch", "asshole", "dick", "pussy"];
+
+  const lowerTitle = title.toLowerCase();
+  const lowerLyrics = lyrics.toLowerCase();
+
+  return (
+    explicitKeywords.some((keyword) => lowerTitle.includes(keyword)) ||
+    explicitWords.some((word) => lowerLyrics.includes(word))
+  );
 }
 
 export default { scrapeLyrics };

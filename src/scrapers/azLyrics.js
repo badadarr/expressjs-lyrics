@@ -98,16 +98,20 @@ export async function scrapeLyrics(title, artist) {
       const textForDetection = languageDetectionText || finalLyrics;
 
       // Deteksi bahasa
-      const language = getLanguageInfo(
+      const languageInfo = getLanguageInfo(
         textForDetection,
         languageDetectionText ? "korean/japanese" : "clean lyrics"
       );
+
+      // Check for explicit content
+      const isExplicit = checkExplicitContent(title, finalLyrics);
 
       return {
         title,
         artist,
         lyrics: finalLyrics,
-        language,
+        language: languageInfo.code, // Use only the language code
+        explicit: isExplicit,
         usedProxy: `${proxy.host}:${proxy.port}`,
       };
     } catch (error) {
@@ -116,6 +120,25 @@ export async function scrapeLyrics(title, artist) {
       if (browserContext) await browserContext.close().catch(console.error);
     }
   });
+}
+
+/**
+ * Checks if the lyrics contain explicit content.
+ * @param {string} title - Song title
+ * @param {string} lyrics - Song lyrics
+ * @returns {boolean} - True if explicit content is detected, otherwise false
+ */
+function checkExplicitContent(title, lyrics) {
+  const explicitKeywords = ["explicit", "mature", "adult", "nsfw"];
+  const explicitWords = ["fuck", "shit", "bitch", "asshole", "dick", "pussy"];
+
+  const lowerTitle = title.toLowerCase();
+  const lowerLyrics = lyrics.toLowerCase();
+
+  return (
+    explicitKeywords.some((keyword) => lowerTitle.includes(keyword)) ||
+    explicitWords.some((word) => lowerLyrics.includes(word))
+  );
 }
 
 // Fungsi ekstraksi lirik utama
