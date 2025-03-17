@@ -246,16 +246,12 @@ async function extractRomanizedLyrics(page, fullLyrics) {
         currentNode = currentNode.nextSibling;
       }
 
-      return langText
-        .replace(/\[English translation:\].*?(\n|$)/g, "")
-        .replace(/\n{3,}/g, "\n\n")
-        .trim();
+      return langText.trim();
     }, fullLyrics);
   } catch {
     return null;
   }
 }
-
 // Fungsi ekstraksi teks deteksi bahasa
 async function extractLanguageText(page, fullLyrics) {
   try {
