@@ -1,4 +1,4 @@
-import { detect, detectAll } from "tinyld";
+import langdetect from "langdetect";
 import { langNames } from "../config/languages.js";
 
 /**
@@ -7,19 +7,15 @@ import { langNames } from "../config/languages.js";
  * @returns {Object} Language detection results
  */
 export function detectLanguage(text) {
-  const tinyldResult = detectAll(text);
-  const tinyldMainLang = detect(text);
+  const detectedLanguages = langdetect.detect(text);
 
   return {
     text: text.substring(0, 100) + (text.length > 100 ? "..." : ""),
     textLength: text.length,
-    tinyld: {
-      mainLanguage: tinyldMainLang,
-      detectedLanguages: tinyldResult.slice(0, 5).map((item) => ({
-        code: item.lang,
-        accuracy: item.accuracy,
-      })),
-    },
+    detectedLanguages: detectedLanguages.slice(0, 5).map((item) => ({
+      code: item.lang,
+      probability: item.prob,
+    })),
   };
 }
 
@@ -41,61 +37,30 @@ export function getLanguageInfo(text, detectionSource = "clean lyrics") {
   };
 
   if (
-    languageDetectionResults.tinyld.detectedLanguages &&
-    languageDetectionResults.tinyld.detectedLanguages.length > 0
+    languageDetectionResults.detectedLanguages &&
+    languageDetectionResults.detectedLanguages.length > 0
   ) {
     // Check if detected language is in the desired language list
-    const detectedLang = languageDetectionResults.tinyld.mainLanguage;
+    const detectedLang = languageDetectionResults.detectedLanguages[0].code;
     if (langNames[detectedLang]) {
       language = {
         code: detectedLang,
-        probability:
-          languageDetectionResults.tinyld.detectedLanguages[0].accuracy,
+        probability: languageDetectionResults.detectedLanguages[0].probability,
         detectedFrom: detectionSource,
       };
     } else {
       // Fallback to the most probable language in the desired language list
-      const mostProbableLang =
-        languageDetectionResults.tinyld.detectedLanguages.find(
-          (lang) => langNames[lang.code]
-        );
-      if (mostProbableLang) {
-        language = {
-          code: mostProbableLang.code,
-          probability: mostProbableLang.accuracy,
-          detectedFrom: detectionSource,
-        };
-      }
-    }
-  } else {
-    // Fallback to direct tinyld usage
-    const detectedLanguages = detectAll(text);
-
-    if (detectedLanguages && detectedLanguages.length > 0) {
-      const mostProbableLang = detectedLanguages.find(
-        (lang) => langNames[lang.lang]
+      const mostProbableLang = languageDetectionResults.detectedLanguages.find(
+        (lang) => langNames[lang.code]
       );
       if (mostProbableLang) {
         language = {
-          code: mostProbableLang.lang,
-          probability: mostProbableLang.accuracy,
+          code: mostProbableLang.code,
+          probability: mostProbableLang.probability,
           detectedFrom: detectionSource,
         };
       }
     }
-  }
-
-  // If the detected language is not in the desired language list, return the most probable language
-  if (
-    language.code === "unknown" &&
-    languageDetectionResults.tinyld.detectedLanguages.length > 0
-  ) {
-    const fallbackLang = languageDetectionResults.tinyld.detectedLanguages[0];
-    language = {
-      code: fallbackLang.code,
-      probability: fallbackLang.accuracy,
-      detectedFrom: detectionSource,
-    };
   }
 
   return language;

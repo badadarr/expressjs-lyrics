@@ -252,6 +252,7 @@ async function extractRomanizedLyrics(page, fullLyrics) {
     return null;
   }
 }
+
 // Fungsi ekstraksi teks deteksi bahasa
 async function extractLanguageText(page, fullLyrics) {
   try {
@@ -306,7 +307,6 @@ async function extractLanguageText(page, fullLyrics) {
     return null;
   }
 }
-
 /**
  * Handler untuk menggunakan fungsi scrapeLyrics dan menangani error dengan baik
  * @param {string} title - Judul lagu
