@@ -2,8 +2,8 @@ import tunnel from "tunnel";
 import { proxies } from "../config/proxies.js";
 import fetch from "node-fetch"; // Import fetch untuk cek IP
 
-// Keep track of the last used proxy
-let currentProxyIndex = 0;
+// Keep track of used proxies
+let usedProxies = new Set();
 
 /**
  * Parses a proxy string into components
@@ -47,16 +47,33 @@ function createTunnelAgent(proxy) {
 }
 
 /**
- * Gets the next proxy in rotation
- * @returns {Object} Next proxy with tunnel agent
+ * Gets a random proxy that hasn't been used yet
+ * @returns {Object} A random, unused proxy with tunnel agent
  */
 export function getNextProxy() {
   if (!proxies.length) {
     throw new Error("Proxy list is empty! Please check your proxies config.");
   }
 
-  const proxyStr = proxies[currentProxyIndex];
-  currentProxyIndex = (currentProxyIndex + 1) % proxies.length;
+  // Create a list of available proxies (not yet used)
+  let availableProxies = proxies.filter(
+    (proxyStr, index) => !usedProxies.has(index)
+  );
+
+  // If all proxies have been used, reset the usedProxies set
+  if (availableProxies.length === 0) {
+    console.log("All proxies have been tried. Resetting used proxies.");
+    usedProxies.clear();
+    availableProxies = [...proxies]; // Reset available proxies
+  }
+
+  // Pick a random proxy from the available proxies
+  const randomIndex = Math.floor(Math.random() * availableProxies.length);
+  const proxyStr = availableProxies[randomIndex];
+  const proxyIndex = proxies.indexOf(proxyStr); // Get the index of the selected proxy
+
+  usedProxies.add(proxyIndex); // Mark the proxy as used
+
   const parsedProxy = parseProxy(proxyStr);
 
   // Create tunneling agent based on proxy type
