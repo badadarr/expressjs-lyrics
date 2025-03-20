@@ -1,10 +1,11 @@
+// script handler untuk languageDetector //languageDetector.js
 import langdetect from "langdetect";
 import { langNames } from "../config/languages.js";
 
 /**
- * Detects the language of a text
- * @param {string} text - Text to analyze
- * @returns {Object} Language detection results
+ * Mendeteksi bahasa dari teks menggunakan library langdetect
+ * @param {string} text - Teks yang akan dianalisis
+ * @returns {Object} Hasil deteksi bahasa
  */
 export function detectLanguage(text) {
   const detectedLanguages = langdetect.detect(text);
@@ -19,48 +20,95 @@ export function detectLanguage(text) {
   };
 }
 
-/**
- * Gets the language with highest probability from detection results
- * @param {string} text - Text to analyze
- * @param {string} detectionSource - Source of text for detection
- * @returns {Object} Language information
- */
-export function getLanguageInfo(text, detectionSource = "clean lyrics") {
-  // Use detectLanguage function to get language detection results
-  const languageDetectionResults = detectLanguage(text);
+function countOccurrences(text, words) {
+  let count = 0;
+  words.forEach((word) => {
+    const regex = new RegExp(`\\b${word}\\b`, "gi"); // Cari kata utuh
+    const matches = text.match(regex);
+    if (matches) count += matches.length;
+  });
+  return count;
+}
 
-  // Default language info
+function isDominantKorean(text) {
+  const koreanWords = [
+    "sarang",
+    "haneul",
+    "neoui",
+    "gajima",
+    "eonje",
+    "geureon",
+    "namja",
+    "naneun",
+    "neon",
+    "hamkke",
+    "saenggak",
+    "geot",
+    "chingu",
+    "mianhae",
+    "hajima",
+    "jeongmal",
+    "aegyo",
+    "gwiyeowo",
+  ];
+  return countOccurrences(text, koreanWords) > 3; // Jika ada lebih dari 3 kata khas Korea
+}
+
+function isDominantJapanese(text) {
+  const japaneseWords = [
+    "suki",
+    "watashi",
+    "anata",
+    "mirai",
+    "sekai",
+    "hikari",
+    "yume",
+    "kokoro",
+    "yoru",
+    "ai",
+    "namida",
+    "kaze",
+    "ashita",
+    "gomen",
+    "itai",
+    "neko",
+    "sugoi",
+    "kawaii",
+    "baka",
+  ];
+  return countOccurrences(text, japaneseWords) > 3; // Jika ada lebih dari 3 kata khas Jepang
+}
+
+export function getLanguageInfo(text, detectionSource = "clean lyrics") {
   let language = {
     code: "unknown",
     probability: 0,
     detectedFrom: detectionSource,
   };
 
+  // **Prioritaskan tag <i>[Korean:]</i> atau <i>[Japanese:]</i>**
+  if (text.includes("[Korean:]")) {
+    language.code = "ko";
+    language.probability = 1.0;
+    return language;
+  }
+  if (text.includes("[Japanese:]")) {
+    language.code = "ja";
+    language.probability = 1.0;
+    return language;
+  }
+
+  // Jika tidak ada tag bahasa, gunakan deteksi otomatis
+  const languageDetectionResults = detectLanguage(text);
+
   if (
     languageDetectionResults.detectedLanguages &&
     languageDetectionResults.detectedLanguages.length > 0
   ) {
-    // Check if detected language is in the desired language list
     const detectedLang = languageDetectionResults.detectedLanguages[0].code;
-    if (langNames[detectedLang]) {
-      language = {
-        code: detectedLang,
-        probability: languageDetectionResults.detectedLanguages[0].probability,
-        detectedFrom: detectionSource,
-      };
-    } else {
-      // Fallback to the most probable language in the desired language list
-      const mostProbableLang = languageDetectionResults.detectedLanguages.find(
-        (lang) => langNames[lang.code]
-      );
-      if (mostProbableLang) {
-        language = {
-          code: mostProbableLang.code,
-          probability: mostProbableLang.probability,
-          detectedFrom: detectionSource,
-        };
-      }
-    }
+    language.code = detectedLang;
+    language.probability =
+      languageDetectionResults.detectedLanguages[0].probability;
   }
 
   return language;

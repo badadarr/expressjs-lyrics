@@ -78,39 +78,36 @@ export async function scrapeLyrics(title, artist) {
       await page.goto(firstResultUrl, { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(3000);
 
-      // Ekstraksi lirik - metode utama
-      let fullLyrics = await extractLyrics(page);
+      // Ekstraksi lirik utama
+      const fullLyrics = await extractLyrics(page);
       if (!fullLyrics) throw new Error("Failed to extract lyrics");
 
-      // Clean lyrics
+      // Bersihkan lirik
       const cleanLyrics = await cleanLyricsText(page, fullLyrics);
 
       // Ekstraksi romanized lyrics
       const romanizedLyrics = await extractRomanizedLyrics(page, fullLyrics);
 
-      // Gunakan romanized lyrics jika tersedia, jika tidak gunakan clean lyrics
+      // Prioritaskan romanized lyrics jika ada
       const finalLyrics = romanizedLyrics || cleanLyrics;
-
       if (!finalLyrics.trim()) throw new Error("Lyrics not found or empty");
 
-      // Ekstraksi teks deteksi bahasa
-      const languageDetectionText = await extractLanguageText(page, fullLyrics);
-      const textForDetection = languageDetectionText || finalLyrics;
+      // **🔹 Perbaikan: Panggil extractLanguageText() hanya sekali**
+      const detectedLang = await extractLanguageText(page, fullLyrics);
 
-      // Deteksi bahasa
-      const languageInfo = getLanguageInfo(
-        textForDetection,
-        languageDetectionText ? "korean/japanese" : "clean lyrics"
-      );
+      // **🔹 Perbaikan: Prioritaskan hasil dari <i>[Korean:]</i> atau <i>[Japanese:]</i>**
+      const languageInfo = detectedLang
+        ? { code: detectedLang, probability: 1.0 }
+        : getLanguageInfo(finalLyrics);
 
-      // Check for explicit content
+      // Cek konten eksplisit
       const isExplicit = checkExplicitContent(title, finalLyrics);
 
       return {
         title,
         artist,
         lyrics: finalLyrics,
-        language: languageInfo.code, // Use only the language code
+        language: languageInfo.code, // Gunakan hanya kode bahasa
         explicit: isExplicit,
         usedProxy: `${proxy.host}:${proxy.port}`,
       };
@@ -155,7 +152,12 @@ async function extractLyrics(page) {
           !text.includes("Submit Corrections")
         );
       });
-      return lyricsDiv ? lyricsDiv.innerHTML : null;
+
+      if (!lyricsDiv) return null;
+
+      // Menyertakan elemen <i> untuk menangkap bahasa
+      let lyricsHtml = lyricsDiv.innerHTML;
+      return lyricsHtml.replace(/<br\s*\/?>/gi, "\n").trim();
     });
   } catch {
     return null;
@@ -202,22 +204,24 @@ async function extractRomanizedLyrics(page, fullLyrics) {
       const italicElements = tempDiv.querySelectorAll("i");
       const languageSections = [];
       for (let i = 0; i < italicElements.length; i++) {
-        const text = italicElements[i].textContent.trim();
+        const text = italicElements[i].textContent.trim().toLowerCase();
         if (text.includes("[") && text.includes("]")) {
           languageSections.push({ element: italicElements[i], text, index: i });
         }
       }
 
+      // Prioritas 1: Cari bagian "Romanized" atau "Romanization"
+      const romanizedTags = ["romanized", "romanization", "romaji", "rr"];
       const romanizedIndex = languageSections.findIndex((section) =>
-        section.text.toLowerCase().includes("romanized")
+        romanizedTags.some((tag) => section.text.includes(tag))
       );
 
+      // Prioritas 2: Jika tidak ada, cari "Korean" atau "Japanese"
       const fallbackLangIndex = languageSections.findIndex((section) =>
-        ["korean", "japanese"].some((lang) =>
-          section.text.toLowerCase().includes(lang)
-        )
+        ["korean", "japanese"].some((lang) => section.text.includes(lang))
       );
 
+      // Gunakan indeks yang ditemukan
       const targetIndex =
         romanizedIndex !== -1 ? romanizedIndex : fallbackLangIndex;
       if (targetIndex === -1) return null;
@@ -261,52 +265,23 @@ async function extractLanguageText(page, fullLyrics) {
       tempDiv.innerHTML = html;
 
       const italicElements = tempDiv.querySelectorAll("i");
-      const languageSections = [];
       for (let i = 0; i < italicElements.length; i++) {
-        const text = italicElements[i].textContent.trim();
-        if (text.includes("[") && text.includes("]")) {
-          languageSections.push({ element: italicElements[i], text, index: i });
+        const text = italicElements[i].textContent.trim().toLowerCase();
+        if (text === "[korean:]") {
+          return "ko"; // Langsung return kode bahasa Korean
+        }
+        if (text === "[japanese:]") {
+          return "ja"; // Langsung return kode bahasa Japanese
         }
       }
 
-      const langIndex = languageSections.findIndex((section) =>
-        ["korean", "japanese"].some((lang) =>
-          section.text.toLowerCase().includes(lang)
-        )
-      );
-
-      if (langIndex === -1) return null;
-
-      const langStart = languageSections[langIndex].element;
-      const nextSectionIndex = langIndex + 1;
-      const hasNextSection = nextSectionIndex < languageSections.length;
-      const endNode = hasNextSection
-        ? languageSections[nextSectionIndex].element
-        : null;
-
-      let langText = "";
-      let currentNode = langStart.nextSibling;
-      while (currentNode) {
-        if (hasNextSection && currentNode === endNode) break;
-        if (currentNode.nodeType === Node.TEXT_NODE) {
-          langText += currentNode.textContent;
-        } else if (currentNode.nodeType === Node.ELEMENT_NODE) {
-          if (currentNode.tagName === "BR") {
-            langText += "\n";
-          } else {
-            langText += currentNode.textContent;
-          }
-        }
-        if (!hasNextSection && !currentNode.nextSibling) break;
-        currentNode = currentNode.nextSibling;
-      }
-
-      return langText.trim();
+      return null;
     }, fullLyrics);
   } catch {
     return null;
   }
 }
+
 /**
  * Handler untuk menggunakan fungsi scrapeLyrics dan menangani error dengan baik
  * @param {string} title - Judul lagu
