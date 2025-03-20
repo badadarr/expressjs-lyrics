@@ -93,7 +93,10 @@ async function checkProxy(proxy) {
  * @param {number} maxRetries - Maximum number of retries
  * @returns {Promise<any>} Result of the async function
  */
-export async function tryWithDifferentProxies(asyncFn, maxRetries = 3) {
+export async function tryWithDifferentProxies(
+  asyncFn,
+  maxRetries = proxies.length
+) {
   let lastError;
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
