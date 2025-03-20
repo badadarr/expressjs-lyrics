@@ -14,18 +14,23 @@ const router = express.Router();
  * @param {object} proxy - Proxy object
  * @returns {Promise<object>} - Scraped lyrics and source
  */
-const trySources = async (title, artist, proxy) => {
+const trySources = async (proxy, title, artist) => {
   try {
-    const result = await scrapers.azLyrics.scrapeLyrics(title, artist, proxy);
+    const result = await scrapers.azLyrics.scrapeLyrics(proxy, title, artist);
     return { lyrics: result, source: "azLyrics" };
   } catch (error) {
     console.log(`AZLyrics failed: ${error.message}, trying Genius...`);
-    const result = await scrapers.geniusLyrics.scrapeLyrics(
-      title,
-      artist,
-      proxy
-    );
-    return { lyrics: result, source: "geniusLyrics" };
+    try {
+      const result = await scrapers.geniusLyrics.scrapeLyrics(
+        proxy,
+        title,
+        artist
+      );
+      return { lyrics: result, source: "geniusLyrics" };
+    } catch (error) {
+      // Re-throw the error to be caught by tryWithDifferentProxies
+      throw new Error(`Genius failed: ${error.message}`);
+    }
   }
 };
 
@@ -38,11 +43,10 @@ router.get("/lyrics", async (req, res) => {
     return res.status(400).json({ error: "Title and artist are required." });
   }
 
-  const proxy = getNextProxy(); // Dapatkan proxy
   try {
     // Try AZLyrics first, then Genius if it fails
-    const result = await tryWithDifferentProxies((proxy) =>
-      trySources(title, artist, proxy)
+    const result = await tryWithDifferentProxies(async (proxy) =>
+      trySources(proxy, title, artist)
     );
 
     res.json({ lyrics: result.lyrics, source: result.source });
@@ -55,7 +59,6 @@ router.get("/lyrics", async (req, res) => {
 });
 
 export default router;
-
 // // Example of trying multiple scrapers in sequence
 // const trySources = async (title, artist, proxy) => {
 //     try {
