@@ -190,7 +190,13 @@ async function cleanLyricsText(page, fullLyrics) {
       }
     }
 
-    return text.replace(/\n{3,}/g, "\n\n").trim();
+    // Replace multiple newlines with a single newline
+    text = text.replace(/\n+/g, "\n").trim();
+
+    // Ensure consistent line spacing between verses
+    text = text.replace(/(\n)(?=\n)/g, "");
+
+    return text;
   }, fullLyrics);
 }
 
@@ -238,19 +244,25 @@ async function extractRomanizedLyrics(page, fullLyrics) {
       while (currentNode) {
         if (hasNextSection && currentNode === endNode) break;
         if (currentNode.nodeType === Node.TEXT_NODE) {
-          langText += currentNode.textContent;
+          langText += currentNode.textContent.trim();
         } else if (currentNode.nodeType === Node.ELEMENT_NODE) {
           if (currentNode.tagName === "BR") {
             langText += "\n";
           } else {
-            langText += currentNode.textContent;
+            langText += currentNode.textContent.trim();
           }
         }
         if (!hasNextSection && !currentNode.nextSibling) break;
         currentNode = currentNode.nextSibling;
       }
 
-      return langText.trim();
+      // Replace multiple newlines with a single newline
+      langText = langText.replace(/\n+/g, "\n").trim();
+
+      // Ensure consistent line spacing between verses
+      langText = langText.replace(/(\n)(?=\n)/g, "");
+
+      return langText;
     }, fullLyrics);
   } catch {
     return null;
