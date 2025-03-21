@@ -37,18 +37,52 @@ export async function scrapeLyrics(proxy, title, artist) {
       throw new Error("Search results did not load in time.");
     }
 
-    const firstSongLink = await page.$("a.mini_card");
+    // Prioritize romanized titles
+    let firstSongLink = null;
+    const songLinks = await page.$$("a.mini_card");
+
+    for (const link of songLinks) {
+      const linkText = await link.evaluate((el) => el.innerText.toLowerCase());
+      if (linkText.includes("romanized")) {
+        firstSongLink = link;
+        console.log("Found romanized version, prioritizing...");
+        break;
+      }
+    }
+
+    if (!firstSongLink && songLinks.length > 0) {
+      // If no romanized version is found, take the first result
+      firstSongLink = songLinks[0];
+      console.log("No romanized version found, using the first result.");
+    }
+
     if (!firstSongLink) {
       throw new Error("No songs found in search results.");
     }
 
     await firstSongLink.click();
-    await page.waitForSelector('div[data-lyrics-container="true"]');
+    try {
+      await page.waitForSelector('div[data-lyrics-container="true"]', {
+        timeout: 10000,
+      });
+    } catch (error) {
+      console.error(
+        "Lyrics container did not load in time or was not found.",
+        error.message
+      );
+      throw new Error("Lyrics container not found after navigation.");
+    }
 
-    const lyrics = await page.$eval(
-      'div[data-lyrics-container="true"]',
-      (el) => el.innerText
-    );
+    let lyrics = "";
+    try {
+      lyrics = await page.$eval(
+        'div[data-lyrics-container="true"]',
+        (el) => el.innerText
+      );
+    } catch (error) {
+      console.error("Error extracting lyrics:", error.message);
+      throw new Error("Failed to extract lyrics from the page.");
+    }
 
     console.log("Lyrics retrieved successfully!");
 
