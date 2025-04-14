@@ -63,7 +63,12 @@ export async function scrapeLyrics(proxy, title, artist) {
       title,
       artist,
       lyrics,
-      language: languageInfo.code, // Use only the language code
+      language:
+        languageInfo.code === "ja"
+          ? "jp"
+          : languageInfo.code === "ko"
+          ? "kr"
+          : languageInfo.code,
       explicit: isExplicit,
       usedProxy: `${proxy.host}:${proxy.port}`,
     };

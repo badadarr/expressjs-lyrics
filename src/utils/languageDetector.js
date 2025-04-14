@@ -10,73 +10,17 @@ import { langNames } from "../config/languages.js";
 export function detectLanguage(text) {
   const detectedLanguages = langdetect.detect(text);
 
+  // Convert standard codes to custom codes
+  const convertedLanguages = detectedLanguages.slice(0, 5).map((item) => ({
+    code: item.lang === "ja" ? "jp" : item.lang === "ko" ? "kr" : item.lang,
+    probability: item.prob,
+  }));
+
   return {
     text: text.substring(0, 100) + (text.length > 100 ? "..." : ""),
     textLength: text.length,
-    detectedLanguages: detectedLanguages.slice(0, 5).map((item) => ({
-      code: item.lang,
-      probability: item.prob,
-    })),
+    detectedLanguages: convertedLanguages,
   };
-}
-
-function countOccurrences(text, words) {
-  let count = 0;
-  words.forEach((word) => {
-    const regex = new RegExp(`\\b${word}\\b`, "gi"); // Cari kata utuh
-    const matches = text.match(regex);
-    if (matches) count += matches.length;
-  });
-  return count;
-}
-
-function isDominantKorean(text) {
-  const koreanWords = [
-    "sarang",
-    "haneul",
-    "neoui",
-    "gajima",
-    "eonje",
-    "geureon",
-    "namja",
-    "naneun",
-    "neon",
-    "hamkke",
-    "saenggak",
-    "geot",
-    "chingu",
-    "mianhae",
-    "hajima",
-    "jeongmal",
-    "aegyo",
-    "gwiyeowo",
-  ];
-  return countOccurrences(text, koreanWords) > 3; // Jika ada lebih dari 3 kata khas Korea
-}
-
-function isDominantJapanese(text) {
-  const japaneseWords = [
-    "suki",
-    "watashi",
-    "anata",
-    "mirai",
-    "sekai",
-    "hikari",
-    "yume",
-    "kokoro",
-    "yoru",
-    "ai",
-    "namida",
-    "kaze",
-    "ashita",
-    "gomen",
-    "itai",
-    "neko",
-    "sugoi",
-    "kawaii",
-    "baka",
-  ];
-  return countOccurrences(text, japaneseWords) > 3; // Jika ada lebih dari 3 kata khas Jepang
 }
 
 export function getLanguageInfo(text, detectionSource = "clean lyrics") {
@@ -86,14 +30,14 @@ export function getLanguageInfo(text, detectionSource = "clean lyrics") {
     detectedFrom: detectionSource,
   };
 
-  // **Prioritaskan tag <i>[Korean:]</i> atau <i>[Japanese:]</i>**
+  // Prioritaskan tag <i>[Korean:]</i> atau <i>[Japanese:]</i>
   if (text.includes("[Korean:]")) {
-    language.code = "ko";
+    language.code = "kr";
     language.probability = 1.0;
     return language;
   }
   if (text.includes("[Japanese:]")) {
-    language.code = "ja";
+    language.code = "jp";
     language.probability = 1.0;
     return language;
   }
@@ -105,7 +49,15 @@ export function getLanguageInfo(text, detectionSource = "clean lyrics") {
     languageDetectionResults.detectedLanguages &&
     languageDetectionResults.detectedLanguages.length > 0
   ) {
-    const detectedLang = languageDetectionResults.detectedLanguages[0].code;
+    let detectedLang = languageDetectionResults.detectedLanguages[0].code;
+
+    // Konversi kode bahasa standar ke kode custom
+    if (detectedLang === "ja") {
+      detectedLang = "jp";
+    } else if (detectedLang === "ko") {
+      detectedLang = "kr";
+    }
+
     language.code = detectedLang;
     language.probability =
       languageDetectionResults.detectedLanguages[0].probability;

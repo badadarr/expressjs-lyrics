@@ -93,7 +93,15 @@ export async function scrapeLyrics(proxy, title, artist) {
 
     // Jika tidak ada deteksi bahasa dari extractLanguageText, gunakan getLanguageInfo
     const languageInfo = detectedLang
-      ? { code: detectedLang, probability: 1.0 }
+      ? {
+          code:
+            detectedLang === "ja"
+              ? "jp"
+              : detectedLang === "ko"
+              ? "kr"
+              : detectedLang,
+          probability: 1.0,
+        }
       : getLanguageInfo(finalLyrics);
 
     // Cek konten eksplisit
@@ -284,10 +292,10 @@ async function extractLanguageText(page, fullLyrics) {
       for (let i = 0; i < italicElements.length; i++) {
         const text = italicElements[i].textContent.trim().toLowerCase();
         if (text === "[korean:]") {
-          return "ko"; // Langsung return kode bahasa Korean
+          return "kr"; // Ubah dari "ko" ke "kr"
         }
         if (text === "[japanese:]") {
-          return "ja"; // Langsung return kode bahasa Japanese
+          return "jp"; // Ubah dari "ja" ke "jp"
         }
       }
 
