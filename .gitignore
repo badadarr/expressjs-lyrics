@@ -12,3 +12,9 @@
 
 # Ignore hit_counter.txt
 /hit_counter.txt
+
+# ignore package-lock.json
+/package-lock.json
+
+# Ignore node_modules
+/node_modules
